@@ -16,24 +16,28 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @Configuration
 public class OrderConfiguration {
-  /** Connects aggregate persistence to its JDBC adapter. */
-  @Bean
-  public OrderRepository orders(JdbcTemplate jdbc) {
-    return new JdbcOrderRepository(jdbc);
-  }
+    /** Connects aggregate persistence to its JDBC adapter. */
+    @Bean
+    public OrderRepository orders(JdbcTemplate jdbc)
+    {
+        return new JdbcOrderRepository(jdbc);
+    }
 
-  /** Connects placement with repository access and generation of unique order identities. */
-  @Bean
-  public PlaceOrderUseCase placeOrder(OrderRepository orders) {
-    return new PlaceOrder(orders, UUID::randomUUID);
-  }
+    /** Connects placement with repository access and generation of unique order identities. */
+    @Bean
+    public PlaceOrderUseCase placeOrder(OrderRepository orders)
+    {
+        return new PlaceOrder(orders, UUID::randomUUID);
+    }
 
-  /** Configures optional Sentry capture and closes it with the application lifecycle. */
-  @Bean(destroyMethod = "close")
-  public SentryOrderTelemetry orderTelemetry(Environment environment) {
-    return new SentryOrderTelemetry(
-        environment.getProperty("SENTRY_DSN", ""),
-        environment.getProperty("APP_RELEASE", "orders-demo@local"),
-        environment.getProperty("DEMO_RUN", "manual"));
-  }
+    /** Configures optional Sentry capture and closes it with the application lifecycle. */
+    @Bean(destroyMethod = "close")
+    public SentryOrderTelemetry orderTelemetry(Environment environment)
+    {
+        return new SentryOrderTelemetry(
+            environment.getProperty("SENTRY_DSN", ""),
+            environment.getProperty("APP_RELEASE", "orders-demo@local"),
+            environment.getProperty("DEMO_RUN", "manual")
+        );
+    }
 }
