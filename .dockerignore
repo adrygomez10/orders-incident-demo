@@ -1,0 +1,7 @@
+.git
+.env*
+.tools
+reports
+target
+
+.ruff_cache

@@ -1,0 +1,12 @@
+/target/
+/.tools/
+/.env
+/.env.*.local
+/reports/*
+!/reports/.gitkeep
+
+__pycache__/
+*.pyc
+/.idea/
+
+/.ruff_cache/
