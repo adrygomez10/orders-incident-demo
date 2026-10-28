@@ -2,7 +2,7 @@
 
 API Java de pedidos con PostgreSQL y captura opcional de errores y trazas en Sentry. Aporta el servicio, el código y la documentación que investiga el proyecto hermano `incident-investigator`. Los usuarios y pedidos son ficticios.
 
-**Esta copia es la base funcional:** un pedido sin `customerReference` se guarda con referencia vacía y devuelve 201. Con una referencia explícita también devuelve 201. El lote de treinta peticiones debe guardar treinta pedidos y no producir errores 500.
+**Esta versión conserva un fallo intencionado:** un pedido sin `customerReference`, opcional según el contrato, devuelve 500. La construcción de `CustomerReference` llama a `strip()` sobre `null`. Con una referencia explícita devuelve 201. El lote debe producir diez errores 500 y guardar veinte pedidos. El fallo permanece en la última versión para poder reproducirlo; no hay un commit posterior que lo arregle. El historial contiene la base funcional y el cambio que introduce el fallo. Puedes contrastar el cambio con `git diff HEAD^ HEAD -- src/main/java/dev/adriangm/orders/domain/CustomerReference.java`.
 
 ## Requisitos y carpetas
 
@@ -79,7 +79,7 @@ curl -i -X POST http://127.0.0.1:18091/orders \
   -d '{"quantity":1}'
 ```
 
-En esta base funcional devuelve **201** con `customerReference` vacío. Cantidades fuera de 1 a 100, referencias mayores de cien caracteres o cabeceras inválidas devuelven 400. `X-Demo-User` admite `demo-user-<número>`; `X-Client-Version`, entre uno y treinta caracteres alfanuméricos, puntos, guiones o guiones bajos. Si omites las cabeceras, se usan los valores de demostración por defecto.
+En esta versión devuelve **500** y `{"error":"ORDER_SAVE_FAILED"}` por el fallo intencionado al procesar una referencia ausente. Cantidades fuera de 1 a 100, referencias mayores de cien caracteres o cabeceras inválidas devuelven 400. `X-Demo-User` admite `demo-user-<número>`; `X-Client-Version`, entre uno y treinta caracteres alfanuméricos, puntos, guiones o guiones bajos. Si omites las cabeceras, se usan los valores de demostración por defecto.
 
 ## 4. Conectar Sentry
 
@@ -91,7 +91,7 @@ Para aplicar el DSN o cambiar `APP_RELEASE`/`DEMO_RUN`:
 docker compose up -d --force-recreate app
 ```
 
-Repite una petición y busca en Sentry la traza **`POST /orders`**, entorno **`workshop`**, proyecto e intervalo correctos. Una petición correcta genera una traza; no crea una incidencia en Issues. Los errores inesperados, cuando se produzcan, devuelven 500 y llevan versión, componente `order-api`, cliente, usuario ficticio y etiqueta de lote. La ausencia de excepciones en esta base funcional es un resultado esperado.
+Repite una petición y busca en Sentry la traza **`POST /orders`**, entorno **`workshop`**, proyecto e intervalo correctos. Una petición correcta genera una traza; no crea una incidencia en Issues. Los errores inesperados, cuando se produzcan, devuelven 500 y llevan versión, componente `order-api`, cliente, usuario ficticio y etiqueta de lote. Las peticiones sin referencia deben aparecer como errores; las que llevan referencia explícita deben terminar correctamente.
 
 El DSN envía datos a Sentry. El token de lectura que usará el investigador se configura en el otro proyecto y tiene una función distinta.
 
@@ -101,7 +101,7 @@ El DSN envía datos a Sentry. El token de lectura que usará el investigador se 
 python3 scripts/generate_traffic.py --requests 30 --output reports/traffic.json
 ```
 
-Diez peticiones omiten la referencia y veinte la incluyen. En esta base funcional se esperan **treinta respuestas 201 y cero errores 500**. `reports/traffic.json` conserva el total, cada estado y la ventana UTC que puedes pasar a la investigación. El generador admite entre una y cien peticiones por ejecución y no elimina pedidos anteriores. `reports/` está excluido de Git.
+Diez peticiones omiten la referencia y veinte la incluyen. En esta versión se esperan **diez respuestas 500 y veinte respuestas 201**. `reports/traffic.json` conserva el total, cada estado y la ventana UTC que puedes pasar a la investigación. El generador admite entre una y cien peticiones por ejecución y no elimina pedidos anteriores. `reports/` está excluido de Git.
 
 El siguiente paso es [configurar y arrancar el investigador](../incident-investigator/README.md), exportar el corpus de este commit y encargar la investigación. Configurar Sentry no implica que un modelo haya investigado todavía ni garantiza acceso desde el MCP.
 
@@ -144,4 +144,6 @@ Para comprobar HTTP y persistencia en una base desechable, sin usar tu `.env` ni
 python3 scripts/verify_scenario.py
 ```
 
-El script construye la copia actual, comprueba treinta respuestas 201, treinta filas y ejecución como UID 10001, y retira sus contenedores y red. Exige un checkout con `HEAD` y sin cambios locales para identificar correctamente el código. Puedes usar las peticiones manuales anteriores durante una revisión sin commits.
+El script construye la copia actual, comprueba diez respuestas 500, veinte respuestas 201, veinte filas y ejecución como UID 10001, y retira sus contenedores y red. Exige un checkout con `HEAD` y sin cambios locales para identificar correctamente el código. Puedes usar las peticiones manuales anteriores durante una revisión sin commits.
+
+Las pruebas conservan el escenario defectuoso para poder investigarlo. Que pasen no implica que se cumpla el contrato del campo opcional. Los resultados esperados permanecen fuera del corpus documental.

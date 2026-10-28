@@ -1,6 +1,7 @@
 package dev.adriangm.orders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -128,13 +129,13 @@ class OrderHttpTest {
   }
 
   @Test
-  void missingReferenceIsAcceptedByTheBaseline() throws Exception {
+  void missingReferenceFailureRemainsReproducible() throws Exception {
     var telemetry = new RecordingTelemetry();
     client(order -> {}, telemetry)
         .perform(post("/orders").contentType(MediaType.APPLICATION_JSON).content(payload(1, null)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.customerReference").value(""));
-    assertNull(telemetry.error);
-    assertEquals(OrderTelemetry.Outcome.SUCCEEDED, telemetry.outcome);
+        .andExpect(status().isInternalServerError())
+        .andExpect(jsonPath("$.error").value("ORDER_SAVE_FAILED"));
+    assertInstanceOf(NullPointerException.class, telemetry.error);
+    assertEquals(OrderTelemetry.Outcome.FAILED, telemetry.outcome);
   }
 }

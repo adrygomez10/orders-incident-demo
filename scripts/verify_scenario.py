@@ -1,4 +1,4 @@
-"""Verify the functional order baseline with disposable PostgreSQL."""
+"""Reproduce the intentional order defect with disposable PostgreSQL."""
 
 import datetime
 import http.client
@@ -45,7 +45,7 @@ def main():
         )
     revision = git("rev-parse", "HEAD")
     report = {
-        "kind": "baseline-contract-verification",
+        "kind": "intentional-fault-reproduction",
         "sourceRevision": revision,
         "sentryEnabled": False,
         "checks": [],
@@ -145,9 +145,11 @@ def main():
             check=True,
         )
         traffic = json.loads(output.read_text(encoding="utf-8"))
-        assert traffic["requests"] == 30 and traffic["errors"] == 0, traffic
+        assert traffic["requests"] == 30 and traffic["errors"] == 10, traffic
         for result in traffic["results"]:
-            assert result["status"] == 201, result
+            assert result["status"] == (
+                500 if result["client"] == "legacy-1" else 201
+            ), result
         rows = int(
             docker(
                 "exec",
@@ -161,14 +163,14 @@ def main():
                 "SELECT count(*) FROM orders",
             )
         )
-        assert rows == 30, rows
+        assert rows == 20, rows
         assert docker("exec", PREFIX + "-app", "id", "-u") == "10001"
-        report.update(requests=30, errors=0, savedOrders=rows, success=True)
+        report.update(requests=30, errors=10, savedOrders=rows, success=True)
         report["checks"] = [
             "current checkout built without selecting historical versions",
-            "10 missing-reference requests return HTTP 201",
+            "10 missing-reference requests fail with HTTP 500",
             "20 explicit-reference requests return HTTP 201; "
-            "30 orders are persisted",
+            "20 orders are persisted",
             "application runs as UID 10001; Sentry disabled",
         ]
     finally:

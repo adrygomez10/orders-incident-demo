@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 class OrderDomainTest {
   @Test
-  void missingReferenceIsAllowed() {
-    assertEquals("", new CustomerReference(null).value());
+  void missingReferenceFailureRemainsReproducible() {
+    assertThrows(NullPointerException.class, () -> new CustomerReference(null));
   }
 
   @Test
