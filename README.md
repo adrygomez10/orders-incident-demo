@@ -126,7 +126,7 @@ Los Markdown de `docs/` son el **corpus del investigador**: componentes, contrat
 - [ADR de normalización](docs/adr-normalization.md).
 - [Arquitectura de pedidos](docs/architecture.md).
 
-Para modificar Java necesitas JDK 25. Desde esta carpeta, `./mvnw verify` ejecuta pruebas de dominio, aplicación, HTTP y ArchUnit, además de Spotless y Checkstyle con el perfil Google. La revisión manual completa nombres, contratos y separación lógica. Maven Wrapper fija la versión de Maven.
+Para modificar Java necesitas JDK 25. Desde esta carpeta, `./mvnw verify` ejecuta pruebas de dominio, aplicación, HTTP y ArchUnit, además de Spotless y Checkstyle con el perfil Clean Code - Project Style. La revisión manual completa nombres, contratos y separación lógica. Maven Wrapper fija la versión de Maven.
 
 ```bash
 ./mvnw verify
@@ -147,3 +147,14 @@ python3 scripts/verify_scenario.py
 El script construye la copia actual, comprueba diez respuestas 500, veinte respuestas 201, veinte filas y ejecución como UID 10001, y retira sus contenedores y red. Exige un checkout con `HEAD` y sin cambios locales para identificar correctamente el código. Puedes usar las peticiones manuales anteriores durante una revisión sin commits.
 
 Las pruebas conservan el escenario defectuoso para poder investigarlo. Que pasen no implica que se cumpla el contrato del campo opcional. Los resultados esperados permanecen fuera del corpus documental.
+
+## Estilo de código compartido
+
+El proyecto utiliza [Clean Code - Project Style 1.0](docs/code-style.md): cuatro espacios, 120 columnas y llaves de métodos y constructores en la línea siguiente. Spotless y Checkstyle comprueban las mismas reglas desde Maven, el precommit y el check independiente `Code style` de las pull requests.
+
+```sh
+docker compose -f compose.style.yaml run --rm --no-deps check
+docker compose -f compose.style.yaml run --rm --no-deps format
+```
+
+La guía documenta la instalación del precommit en cada clon y los límites de la comprobación automática.
